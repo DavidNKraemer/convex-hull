@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+from matplotlib import rcParams
+from matplotlib.pyplot import subplots
+import seaborn as sns
+from numpy import loadtxt, concatenate
+import argparse as arg
+
+# Local configurations
+test_point_dir = "./tests/"
+results_dir = "./results/"
+figures_dir = "./results_figs/py_"
+fig_ext = "png"
+
+# Plot stylings
+sns.set_context("paper")
+sns.set_style("white")
+
+rcParams['lines.linewidth'] = 3.
+rcParams['lines.markersize'] = 10.
+rcParams['font.size'] = 14.
+rcParams['legend.fontsize'] = 12.
+
+
+
+parser = arg.ArgumentParser(description="Plot convex hulls of a given point cloud")
+parser.add_argument('filename', type=str, nargs=1, 
+        metavar="file",
+        help="the name of the file inside of {} that you would like to plot".
+        format(test_point_dir))
+
+args = parser.parse_args()
+filename = args.filename[0]
+
+pc = loadtxt(test_point_dir + filename, delimiter=',')
+ch = loadtxt(results_dir + filename, delimiter=',')
+ch = concatenate((ch, [ch[0]]))
+
+min_x, min_y = min(ch[:,0]), min(ch[:,1])
+max_x, max_y = max(ch[:,0]), max(ch[:,1])
+
+x_range = max_x - min_x
+y_range = max_y - min_y
+
+fig, ax = subplots(nrows=1, ncols=1)
+
+l1, l2 = ax.plot(pc[:,0], pc[:,1], 'b*', 
+        ch[:,0], ch[:,1], 'r-o')
+
+pad = 1./16.
+
+ax.set_xlim([min_x - x_range * pad, max_x + x_range * pad])
+ax.set_ylim([min_y - y_range * pad, max_y + y_range * pad])
+ax.axis('off')
+
+fig.suptitle("Results of {}".format(filename))
+fig.legend((l1, l2), ('Point cloud', 'Convex hull'), 'right')
+fig.tight_layout()
+fig.subplots_adjust(right=0.75)
+
+fig.savefig(figures_dir + filename[:-3] + fig_ext)
+
